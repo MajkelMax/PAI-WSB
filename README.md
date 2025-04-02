@@ -1,5 +1,6 @@
 Progressive Project
 Description
+
 A simple banking system that allows viewing account information, transaction history, and making transfers. This project is developed as part of a web programming course.
 Installation
 
