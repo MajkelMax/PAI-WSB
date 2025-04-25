@@ -19,7 +19,7 @@ $accountData = [
 
 $transactions = [
     [
-        'date' => '2025-04-01',
+        'date' => '2024-04-01',
         'description' => 'Wypłata wynagrodzenia',
         'amount' => 3000.00,
     ],
