@@ -3,59 +3,34 @@
  * Strona szczegółów konta
  * 
  * Ten plik zawiera szczegółowe informacje o koncie
- * oraz historię wszystkich transakcji.
+ * oraz historię wszystkich transakcji, pobieranych z bazy PostgreSQL.
  * 
  * @author Michał Grzelka
- * @version 1.0
+ * @version 2.0
  */
 
-// Symulacja danych użytkownika (w przyszłości będą pobierane z bazy danych)
-$accountData = [
-    'name' => 'Jan Kowalski',
-    'account_number' => '12 3456 7890 1234 5678 9012 3456',
-    'balance' => 1500.75,
-    'account_type' => 'Konto osobiste',
-    'open_date' => '2023-01-15'
-];
+// Dołączenie pliku konfiguracyjnego bazy danych
+require_once 'db_config.php';
 
+// Pobieranie danych użytkownika z bazy danych
+$userId = getCurrentUserId();
+$userData = getUserById($userId);
+$accountData = getAccountByUserId($userId);
 
-$transactions = [
-    [
-        'date' => '2025-04-01',
-        'description' => 'Wypłata wynagrodzenia',
-        'amount' => 3000.00,
-        'balance_after' => 1500.75
-    ],
-    [
-        'date' => '2025-03-28',
-        'description' => 'Zakupy spożywcze',
-        'amount' => -125.60,
-        'balance_after' => -1499.25
-    ],
-    [
-        'date' => '2025-03-25',
-        'description' => 'Opłata za mieszkanie',
-        'amount' => -1200.00,
-        'balance_after' => -1373.65
-    ],
-    [
-        'date' => '2025-03-20',
-        'description' => 'Przelew od Jana Nowaka',
-        'amount' => 350.00,
-        'balance_after' => -173.65
-    ],
-    [
-        'date' => '2025-03-15',
-        'description' => 'Zakupy online',
-        'amount' => -250.50,
-        'balance_after' => -523.65
-    ],
-    [
-        'date' => '2025-03-10',
-        'description' => 'Wpłata własna',
-        'amount' => 500.00,
-        'balance_after' => -273.15
-    ],
+if (!$userData || !$accountData) {
+    die("Błąd: Nie można pobrać danych użytkownika lub konta");
+}
+
+// Pobieranie wszystkich transakcji
+$transactions = getTransactionsByAccountId($accountData['account_id']);
+
+// Przekształcenie danych do wyświetlenia
+$accountInfo = [
+    'name' => $userData[0]['first_name'] . ' ' . $userData[0]['last_name'],
+    'account_number' => $accountData['account_number'],
+    'balance' => $accountData['balance'],
+    'account_type' => $accountData['account_type'],
+    'open_date' => $accountData['open_date']
 ];
 
 // Dołączenie nagłówka strony
@@ -70,29 +45,30 @@ include 'includes/header.php';
         <div class="details-box">
             <div class="detail-row">
                 <span class="detail-label">Właściciel:</span>
-                <span class="detail-value"><?php echo $accountData['name']; ?></span>
+                <span class="detail-value"><?php echo $accountInfo['name']; ?></span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Numer konta:</span>
-                <span class="detail-value"><?php echo $accountData['account_number']; ?></span>
+                <span class="detail-value"><?php echo $accountInfo['account_number']; ?></span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Typ konta:</span>
-                <span class="detail-value"><?php echo $accountData['account_type']; ?></span>
+                <span class="detail-value"><?php echo $accountInfo['account_type']; ?></span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Data otwarcia:</span>
-                <span class="detail-value"><?php echo $accountData['open_date']; ?></span>
+                <span class="detail-value"><?php echo date('Y-m-d', strtotime($accountInfo['open_date'])); ?></span>
             </div>
             <div class="detail-row highlight">
                 <span class="detail-label">Aktualne saldo:</span>
-                <span class="detail-value"><?php echo number_format($accountData['balance'], 2, ',', ' '); ?> PLN</span>
+                <span class="detail-value"><?php echo number_format($accountInfo['balance'], 2, ',', ' '); ?> PLN</span>
             </div>
         </div>
     </section>
     
     <section class="transaction-history">
         <h3>Historia transakcji</h3>
+        <?php if ($transactions && count($transactions) > 0): ?>
         <table class="transactions-table">
             <tr>
                 <th>Data</th>
@@ -102,7 +78,7 @@ include 'includes/header.php';
             </tr>
             <?php foreach ($transactions as $transaction): ?>
             <tr>
-                <td><?php echo $transaction['date']; ?></td>
+                <td><?php echo date('Y-m-d', strtotime($transaction['date'])); ?></td>
                 <td><?php echo $transaction['description']; ?></td>
                 <td class="<?php echo $transaction['amount'] >= 0 ? 'positive' : 'negative'; ?>">
                     <?php echo number_format($transaction['amount'], 2, ',', ' '); ?> PLN
@@ -113,6 +89,9 @@ include 'includes/header.php';
             </tr>
             <?php endforeach; ?>
         </table>
+        <?php else: ?>
+        <p>Brak transakcji do wyświetlenia.</p>
+        <?php endif; ?>
     </section>
     
     <div class="action-buttons">

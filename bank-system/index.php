@@ -3,36 +3,32 @@
  * Strona główna systemu bankowego
  * 
  * Ten plik zawiera podstawową strukturę strony głównej
- * systemu bankowego, który będzie rozwijany w ramach projektu.
+ * systemu bankowego, podłączoną do bazy danych PostgreSQL.
  * 
  * @author Michał Grzelka
- * @version 1.0
+ * @version 2.0
  */
 
-// Symulacja danych użytkownika (w przyszłości będą pobierane z bazy danych)
-$accountData = [
-    'name' => 'Jan Kowalski',
-    'account_number' => '12 3456 7890 1234 5678 9012 3456',
-    'balance' => 1500.75
-];
+// Dołączenie pliku konfiguracyjnego bazy danych
+require_once 'db_config.php';
 
+// Pobieranie danych użytkownika z bazy danych
+$userId = getCurrentUserId();
+$userData = getUserById($userId);
+$accountData = getAccountByUserId($userId);
 
-$transactions = [
-    [
-        'date' => '2024-04-01',
-        'description' => 'Wypłata wynagrodzenia',
-        'amount' => 3000.00,
-    ],
-    [
-        'date' => '2025-03-28',
-        'description' => 'Zakupy spożywcze',
-        'amount' => -125.60,
-    ],
-    [
-        'date' => '2025-03-25',
-        'description' => 'Opłata za mieszkanie',
-        'amount' => -1200.00,
-    ]
+if (!$userData || !$accountData) {
+    die("Błąd: Nie można pobrać danych użytkownika lub konta");
+}
+
+// Pobieranie ostatnich 3 transakcji
+$transactions = getTransactionsByAccountId($accountData['account_id'], 3);
+
+// Przekształcenie danych do wyświetlenia
+$accountInfo = [
+    'name' => $userData[0]['first_name'] . ' ' . $userData[0]['last_name'],
+    'account_number' => $accountData['account_number'],
+    'balance' => $accountData['balance']
 ];
 
 // Dołączenie nagłówka strony
@@ -48,10 +44,10 @@ include 'includes/header.php';
     <section class="account-summary">
         <h3>Twoje konto</h3>
         <div class="account-info">
-            <p><strong>Właściciel:</strong> <?php echo $accountData['name']; ?></p>
-            <p><strong>Numer konta:</strong> <?php echo $accountData['account_number']; ?></p>
+            <p><strong>Właściciel:</strong> <?php echo $accountInfo['name']; ?></p>
+            <p><strong>Numer konta:</strong> <?php echo $accountInfo['account_number']; ?></p>
             <p class="balance"><strong>Saldo:</strong> 
-                <span class="amount"><?php echo number_format($accountData['balance'], 2, ',', ' '); ?> PLN</span>
+                <span class="amount"><?php echo number_format($accountInfo['balance'], 2, ',', ' '); ?> PLN</span>
             </p>
         </div>
         <div class="account-actions">
@@ -62,6 +58,7 @@ include 'includes/header.php';
     
     <section class="recent-transactions">
         <h3>Ostatnie transakcje</h3>
+        <?php if ($transactions && count($transactions) > 0): ?>
         <table class="transactions-table">
             <tr>
                 <th>Data</th>
@@ -70,7 +67,7 @@ include 'includes/header.php';
             </tr>
             <?php foreach ($transactions as $transaction): ?>
             <tr>
-                <td><?php echo $transaction['date']; ?></td>
+                <td><?php echo date('Y-m-d', strtotime($transaction['date'])); ?></td>
                 <td><?php echo $transaction['description']; ?></td>
                 <td class="<?php echo $transaction['amount'] >= 0 ? 'positive' : 'negative'; ?>">
                     <?php echo number_format($transaction['amount'], 2, ',', ' '); ?> PLN
@@ -78,6 +75,9 @@ include 'includes/header.php';
             </tr>
             <?php endforeach; ?>
         </table>
+        <?php else: ?>
+        <p>Brak transakcji do wyświetlenia.</p>
+        <?php endif; ?>
     </section>
 </div>
 

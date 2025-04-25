@@ -3,51 +3,85 @@
  * Strona przelewów systemu bankowego
  * 
  * Ten plik zawiera formularz do wykonywania przelewów
- * oraz logikę obsługi przelewów.
+ * oraz logikę obsługi przelewów, z wykorzystaniem bazy PostgreSQL.
  * 
  * @author Michał Grzelka
- * @version 1.0
+ * @version 2.0
  */
 
-// Symulacja danych użytkownika (w przyszłości będą pobierane z bazy danych)
-$accountData = [
-    'name' => 'Jan Kowalski',
-    'account_number' => '12 3456 7890 1234 5678 9012 3456',
-    'balance' => 1500.75
-];
+// Dołączenie pliku konfiguracyjnego bazy danych
+require_once 'db_config.php';
 
+// Pobieranie danych użytkownika z bazy danych
+$userId = getCurrentUserId();
+$userData = getUserById($userId);
+$accountData = getAccountByUserId($userId);
+
+if (!$userData || !$accountData) {
+    die("Błąd: Nie można pobrać danych użytkownika lub konta");
+}
 
 $message = '';
 $messageType = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    $recipientAccount = $_POST['recipient_account'] ?? '';
-    $recipientName = $_POST['recipient_name'] ?? '';
-    $amount = $_POST['amount'] ?? 0;
-    $title = $_POST['title'] ?? '';
+    // Rozpoczęcie transakcji bazodanowej
+    $conn = connectToDatabase();
+    $conn->beginTransaction();
     
-    // Walidacja danych
-    if (empty($recipientAccount) || empty($recipientName) || empty($amount) || empty($title)) {
-        $message = 'Wszystkie pola formularza są wymagane';
-        $messageType = 'error';
-    } elseif (!is_numeric($amount) || $amount <= 0) {
-        $message = 'Kwota musi być liczbą większą od zera';
-        $messageType = 'error';
-    } elseif ($amount > $accountData['balance']) {
-        $message = 'Niewystarczające środki na koncie';
-        $messageType = 'error';
-    } else {
-
+    try {
+        $recipientAccount = $_POST['recipient_account'] ?? '';
+        $recipientName = $_POST['recipient_name'] ?? '';
+        $amount = $_POST['amount'] ?? 0;
+        $title = $_POST['title'] ?? '';
+        
+        // Walidacja danych
+        if (empty($recipientAccount) || empty($recipientName) || empty($amount) || empty($title)) {
+            throw new Exception('Wszystkie pola formularza są wymagane');
+        } 
+        
+        if (!is_numeric($amount) || $amount <= 0) {
+            throw new Exception('Kwota musi być liczbą większą od zera');
+        } 
+        
+        if ($amount > $accountData['balance']) {
+            throw new Exception('Niewystarczające środki na koncie');
+        }
+        
+        // Dane transakcji
+        $transactionData = [
+            'account_id' => $accountData['account_id'],
+            'description' => 'Przelew do: ' . $recipientName,
+            'amount' => -$amount, // Ujemna kwota dla przelewu wychodzącego
+            'transaction_type' => 'przelew',
+            'recipient_account' => $recipientAccount,
+            'recipient_name' => $recipientName,
+            'title' => $title
+        ];
+        
+        // Dodanie transakcji
+        if (!addTransaction($transactionData)) {
+            throw new Exception('Błąd podczas dodawania transakcji');
+        }
+        
+        // Aktualizacja danych konta (saldo jest aktualizowane przez trigger)
+        $accountData = getAccountByUserId($userId);
+        
+        // Zatwierdzenie transakcji
+        $conn->commit();
+        
         $message = 'Przelew został zrealizowany pomyślnie';
         $messageType = 'success';
         
+    } catch (Exception $e) {
+        // Wycofanie transakcji w przypadku błędu
+        $conn->rollBack();
         
-        $accountData['balance'] -= $amount;
+        $message = $e->getMessage();
+        $messageType = 'error';
     }
 }
 
-// Dołączenie nagłówka strony
 include 'includes/header.php';
 ?>
 
@@ -95,6 +129,5 @@ include 'includes/header.php';
 </div>
 
 <?php
-// Dołączenie stopki strony
 include 'includes/footer.php';
 ?>
