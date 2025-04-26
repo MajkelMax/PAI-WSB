@@ -12,7 +12,7 @@
 // Dane do połączenia z bazą danych PostgreSQL
 $host = "localhost";
 $port = "5432";
-$dbname = "wsb";   
+$dbname = "postgres";   
 $username = "postgres";    
 $password = "root"; // Zmień na właściwe hasło    
 

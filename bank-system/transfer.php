@@ -10,7 +10,7 @@
  */
 
 // Dołączenie pliku konfiguracyjnego bazy danych
-require_once 'db_config.php';
+require_once 'includes/db_config.php';
 
 // Pobieranie danych użytkownika z bazy danych
 $userId = getCurrentUserId();
