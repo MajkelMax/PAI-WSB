@@ -9,19 +9,25 @@
  * @version 2.0
  */
 
-// Dołączenie pliku konfiguracyjnego bazy danych
+
 require_once 'includes/db_config.php';
 
 // Pobieranie danych użytkownika z bazy danych
 $userId = getCurrentUserId();
+if (!$userId) {
+    header('Location: login.php');
+    exit();
+}
 $userData = getUserById($userId);
 $accountData = getAccountByUserId($userId);
 
 if (!$userData || !$accountData) {
+    print_r($userData);
+    print($accountData);
     die("Błąd: Nie można pobrać danych użytkownika lub konta");
 }
 
-// Pobieranie ostatnich 3 transakcji
+
 $transactions = getTransactionsByAccountId($accountData['account_id'], 3);
 
 // Przekształcenie danych do wyświetlenia
@@ -31,7 +37,6 @@ $accountInfo = [
     'balance' => $accountData['balance']
 ];
 
-// Dołączenie nagłówka strony
 include 'includes/header.php';
 ?>
 
@@ -82,6 +87,6 @@ include 'includes/header.php';
 </div>
 
 <?php
-// Dołączenie stopki strony
+
 include 'includes/footer.php';
 ?>

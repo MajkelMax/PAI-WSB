@@ -9,11 +9,14 @@
  * @version 2.0
  */
 
-// Dołączenie pliku konfiguracyjnego bazy danych
 require_once 'includes/db_config.php';
 
-// Pobieranie danych użytkownika z bazy danych
 $userId = getCurrentUserId();
+if (!$userId) {
+    header('Location: login.php');
+    exit();
+}
+
 $userData = getUserById($userId);
 $accountData = getAccountByUserId($userId);
 
@@ -21,10 +24,10 @@ if (!$userData || !$accountData) {
     die("Błąd: Nie można pobrać danych użytkownika lub konta");
 }
 
-// Pobieranie wszystkich transakcji
+
 $transactions = getTransactionsByAccountId($accountData['account_id']);
 
-// Przekształcenie danych do wyświetlenia
+
 $accountInfo = [
     'name' => $userData[0]['first_name'] . ' ' . $userData[0]['last_name'],
     'account_number' => $accountData['account_number'],
@@ -33,7 +36,7 @@ $accountInfo = [
     'open_date' => $accountData['open_date']
 ];
 
-// Dołączenie nagłówka strony
+
 include 'includes/header.php';
 ?>
 
@@ -101,6 +104,6 @@ include 'includes/header.php';
 </div>
 
 <?php
-// Dołączenie stopki strony
+
 include 'includes/footer.php';
 ?>

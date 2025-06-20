@@ -8,48 +8,38 @@
  * @author Michał Grzelka
  * @version 2.0
  */
+// Inicjowanie sesji dla obsługi logowania
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// Dane do połączenia z bazą danych PostgreSQL
-$host = "localhost";
-$port = "5432";
-$dbname = "postgres";   
-$username = "postgres";    
-$password = "root"; // Zmień na właściwe hasło    
 
-/**
- * Funkcja do nawiązywania połączenia z bazą danych PostgreSQL
- * 
- * @return PDO|null Obiekt połączenia z bazą danych lub null w przypadku błędu
- */
+$db_host = "localhost";
+$db_port = "5432";
+$db_dbname = "postgres";   
+$db_username = "postgres";    
+$db_password = "root";  
+
+
 function connectToDatabase() {
-    global $host, $port, $dbname, $username, $password;
+    global $db_host, $db_port, $db_dbname, $db_username, $db_password;
     
     try {
-        // Utworzenie nowego połączenia PDO do PostgreSQL
-        $conn = new PDO("pgsql:host=$host;port=$port;dbname=$dbname", $username, $password);
         
-        // Ustawienia PDO do zgłaszania błędów
+        $conn = new PDO("pgsql:host=$db_host;port=$db_port;dbname=$db_dbname", $db_username, $db_password);
         $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         $conn->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-        
+
         return $conn;
     } catch(PDOException $e) {
-        // W przypadku błędu wyświetl komunikat
         error_log("Błąd połączenia z bazą danych: " . $e->getMessage());
         return null;
     }
 }
 
-/**
- * Funkcja do wykonywania zapytań SQL
- * 
- * @param string $sql Zapytanie SQL
- * @param array $params Parametry do zapytania
- * @return array|bool Wynik zapytania lub false w przypadku błędu
- */
+
 function executeQuery($sql, $params = []) {
     $conn = connectToDatabase();
-    
     if ($conn == null) {
         return false;
     }
@@ -58,7 +48,6 @@ function executeQuery($sql, $params = []) {
         $stmt = $conn->prepare($sql);
         $stmt->execute($params);
         
-        // Sprawdź, czy to zapytanie SELECT
         if (stripos($sql, 'SELECT') === 0) {
             return $stmt->fetchAll();
         }
@@ -70,23 +59,13 @@ function executeQuery($sql, $params = []) {
     }
 }
 
-/**
- * Pobiera dane użytkownika na podstawie ID
- * 
- * @param int $userId ID użytkownika
- * @return array|false Dane użytkownika lub false w przypadku błędu
- */
+
 function getUserById($userId) {
     $sql = "SELECT * FROM users WHERE user_id = :user_id";
     return executeQuery($sql, [':user_id' => $userId]);
 }
 
-/**
- * Pobiera dane konta na podstawie ID użytkownika
- * 
- * @param int $userId ID użytkownika
- * @return array|false Dane konta lub false w przypadku błędu
- */
+
 function getAccountByUserId($userId) {
     $sql = "SELECT * FROM accounts WHERE user_id = :user_id";
     $accounts = executeQuery($sql, [':user_id' => $userId]);
@@ -98,13 +77,7 @@ function getAccountByUserId($userId) {
     return false;
 }
 
-/**
- * Pobiera transakcje dla danego konta
- * 
- * @param int $accountId ID konta
- * @param int $limit Limit liczby transakcji do pobrania (opcjonalnie)
- * @return array|false Lista transakcji lub false w przypadku błędu
- */
+
 function getTransactionsByAccountId($accountId, $limit = null) {
     $sql = "SELECT * FROM transactions WHERE account_id = :account_id ORDER BY date DESC";
     
@@ -115,12 +88,7 @@ function getTransactionsByAccountId($accountId, $limit = null) {
     return executeQuery($sql, [':account_id' => $accountId]);
 }
 
-/**
- * Dodaje nową transakcję
- * 
- * @param array $transactionData Dane transakcji
- * @return bool True jeśli transakcja została dodana, false w przypadku błędu
- */
+
 function addTransaction($transactionData) {
     $sql = "INSERT INTO transactions (account_id, description, amount, transaction_type, recipient_account, recipient_name, title) 
             VALUES (:account_id, :description, :amount, :transaction_type, :recipient_account, :recipient_name, :title)";
@@ -136,13 +104,7 @@ function addTransaction($transactionData) {
     ]);
 }
 
-/**
- * Aktualizuje saldo konta
- * 
- * @param int $accountId ID konta
- * @param float $newBalance Nowe saldo
- * @return bool True jeśli saldo zostało zaktualizowane, false w przypadku błędu
- */
+
 function updateAccountBalance($accountId, $newBalance) {
     $sql = "UPDATE accounts SET balance = :balance WHERE account_id = :account_id";
     
@@ -152,8 +114,24 @@ function updateAccountBalance($accountId, $newBalance) {
     ]);
 }
 
-// Tymczasowa funkcja do symulacji logowania - w rzeczywistości powinna być obsługa sesji
+
+function authenticateUser($email, $password) {
+    $sql = "SELECT user_id, password FROM users WHERE email = :email";
+    $params = [
+        ':email' => $email
+    ];
+    $user = executeQuery($sql, $params);
+
+    if (is_array($user) && count($user) === 1) {
+        $hash = $user[0]['password'];
+        if (password_verify($password, $hash) || $hash === $password) {
+            return $user[0]['user_id'];
+        }
+    }
+
+    return false;
+}
+
 function getCurrentUserId() {
-    // W rzeczywistości powinno być pobierane z sesji
-    return 1; // ID przykładowego użytkownika
+    return $_SESSION['user_id'] ?? null;
 }
