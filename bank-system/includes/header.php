@@ -18,12 +18,10 @@
         <nav class="main-nav">
             <ul>
                 <li><a href="index.php">Strona główna</a></li>
+                <?php if ($loggedIn): ?>
                 <li><a href="account.php">Moje konto</a></li>
                 <li><a href="transfer.php">Przelewy</a></li>
-                <?php if ($loggedIn): ?>
                 <li><a href="logout.php">Wyloguj</a></li>
-                <?php else: ?>
-                <li><a href="login.php">Zaloguj</a></li>
                 <?php endif; ?>
             </ul>
         </nav>

@@ -20,6 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Nieprawidłowa nazwa użytkownika lub hasło';
     }
 }
+
+include 'includes/header.php';
 ?>
 <!DOCTYPE html>
 <html lang="pl">
@@ -30,24 +32,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <div class="container login-container">
-        <h2>Zaloguj się</h2>
-        <?php if ($error): ?>
-            <div class="message error"><?php echo $error; ?></div>
-        <?php endif; ?>
-        <form action="login.php" method="post" class="login-form">
-            <div class="form-group">
-                <label for="login">E-mail lub login:</label>
-                <input type="text" id="login" name="login" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Hasło:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn">Zaloguj</button>
-            </div>
-        </form>
+<body class="bg-light">
+    <div class="container d-flex align-items-center justify-content-center min-vh-100 login-container">
+        <div class="card shadow-sm p-4" style="max-width: 400px; width: 100%;">
+            <h2 class="card-title text-center mb-4">Zaloguj się</h2>
+            <?php if ($error): ?>
+                <div class="alert alert-danger" role="alert"><?php echo $error; ?></div>
+            <?php endif; ?>
+            <form action="login.php" method="post" class="login-form">
+                <div class="mb-3">
+                    <label for="login" class="form-label">E-mail lub login:</label>
+                    <input type="text" class="form-control" id="login" name="login" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Hasło:</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Zaloguj</button>
+            </form>
+        </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+<?php
+include 'includes/footer.php';
+?>
