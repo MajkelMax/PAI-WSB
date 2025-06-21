@@ -41,7 +41,7 @@ include 'includes/header.php';
             <?php endif; ?>
             <form action="login.php" method="post" class="login-form">
                 <div class="mb-3">
-                    <label for="login" class="form-label">E-mail lub login:</label>
+                    <label for="login" class="form-label">E-mail:</label>
                     <input type="text" class="form-control" id="login" name="login" required>
                 </div>
                 <div class="mb-3">
